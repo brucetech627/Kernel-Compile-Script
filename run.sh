@@ -1,7 +1,6 @@
 #Kernel-Compiling-Script
 
 #!/bin/bash
-cd storm
 KERNEL_DIR=$(pwd)
 ANYKERNEL3_DIR="${KERNEL_DIR}/AnyKernel3"
 export PATH="${KERNEL_DIR}/clang/bin:${PATH}"
