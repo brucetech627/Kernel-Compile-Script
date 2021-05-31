@@ -1,55 +1,36 @@
 #Kernel-Compiling-Script
 
 #!/bin/bash
+KERNEL_DIR=$(pwd)
+ANYKERNEL3_DIR="${KERNEL_DIR}/AnyKernel3"
+export PATH="${KERNEL_DIR}/clang/bin:${PATH}"
+export KBUILD_COMPILER_STRING="(${KERNEL_DIR}/clang/bin/clang --version | head -n 1 | perl -pe 's/\((?:http|git).*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//' -e 's/^.*clang/clang/')"
 export ARCH=arm64
 export SUBARCH=arm64
-export KBUILD_BUILD_HOST="R-A-D-E-O-N"
-export KBUILD_BUILD_USER="K A R T H I K"
-MAKE="./makeparallel"
+export KBUILD_BUILD_USER=brucetech627
+export KBUILD_BUILD_HOST=circleci
+# Compile plox
+function compile() {
+    make sweet_user_defconfig O=out
+    make -j$(nproc --all) O=out \
+                      ARCH=arm64 \
+                      CC=clang \
+                      CROSS_COMPILE=aarch64-linux-gnu- \
+                      CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+                      NM=llvm-nm \
+                      OBJCOPY=llvm-objcopy \
+                      OBJDUMP=llvm-objdump \
+                      STRIP=llvm-strip
 
-BUILD_START=$(date +"%s")
-blue='\033[0;34m'
-cyan='\033[0;36m'
-yellow='\033[0;33m'
-red='\033[0;31m'
-nocol='\033[0m'
-
-# Set Date
-DATE=$(TZ=Asia/Jakarta date +"%Y%m%d-%T")
-
-TC_DIR="/home/ubuntu/Kernel"
-MPATH="$TC_DIR/clang/bin/:$PATH"
-rm -f out/arch/arm64/boot/Image.gz-dtb
-make O=out vendor/violet-perf_defconfig
-PATH="$MPATH" make -j16 O=out \
-    NM=llvm-nm \
-    OBJCOPY=llvm-objcopy \
-    LD=ld.lld \
-        CROSS_COMPILE=aarch64-linux-gnu- \
-        CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
-        CC=clang \
-        AR=llvm-ar \
-        OBJDUMP=llvm-objdump \
-        STRIP=llvm-strip
-        2>&1 | tee error.log
-
-git clone https://android.googlesource.com/platform/system/libufdt scripts/ufdt/libufdt
-python2 scripts/ufdt/libufdt/utils/src/mkdtboimg.py create out/arch/arm64/boot/dtbo.img --page_size=4096 out/arch/arm64/boot/dts/qcom/sm6150-idp-overlay.dtbo
-
-cp out/arch/arm64/boot/Image.gz-dtb /home/ubuntu/Kernel/Anykernel
-cp out/arch/arm64/boot/dtbo.img /home/ubuntu/Kernel/Anykernel
-cd /home/ubuntu/Kernel/Anykernel
-if [ -f "Image.gz-dtb" ]; then
-    zip -r9 RyZeN+-violet-R-"$DATE".zip"* -x .git README.md *placeholder
-cp /home/ubuntu/Kernel/Anykernel/RyZeN+-violet-R-"$DATE".zip /home/ubuntu/Kernel
-rm /home/ubuntu/Kernel/Anykernel/Image.gz-dtb
-rm /home/ubuntu/Kernel/Anykernel/RyZeN+-violet-R-"$DATE".zip
-
-BUILD_END=$(date +"%s")
-DIFF=$(($BUILD_END - $BUILD_START))
-echo -e "$yellow Build completed in $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds.$nocol"
-
-    echo "Build success!"
-else
-    echo "Build failed!"
-fi
+echo "**** Verify Image.gz-dtb & dtbo.img ****"
+ls $PWD/out/arch/arm64/boot/Image.gz-dtb
+}
+# Zipping
+function zipping() {
+    cp $PWD/out/arch/arm64/boot/Image.gz-dtb $ANYKERNEL3_DIR/
+    cd $ANYKERNEL3_DIR || exit 1
+    zip -r9 Sweet-StormBreaker.zip *
+    curl https://bashupload.com/Sweet-StormBreaker.zip --data-binary @Sweet-StormBreaker.zip
+}
+compile
+zipping
