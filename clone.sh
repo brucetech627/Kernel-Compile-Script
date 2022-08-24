@@ -7,4 +7,3 @@ git clone --depth=1 https://github.com/stormbreaker-project/AnyKernel3 -b sweet 
 cd ..
 # Start Build
 
-bash run.sh
